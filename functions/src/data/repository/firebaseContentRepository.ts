@@ -36,7 +36,7 @@ export class FirebaseContentRepository implements ContentRepository {
     const topic = topics[Math.floor(Math.random() * topics.length)];
     const themeId = topic.get("themeId"), theme = typeof themeId === "string" && themeId ? await this.db.doc(`themes/${themeId}`).get() : null;
     const topicName = String(topic.get("name") ?? topic.get("title") ?? "").trim();
-    if (!topicName) throw new DomainError("failed-precondition", "No se pudieron cargar las restricciones de la partida");
+    if (!topicName) throw new DomainError("failed-precondition", "The game restrictions could not be loaded");
     return {words: words.slice(0, count), topic: topicName, theme: theme?.get("name") ?? null, advanced: ["FIRST_PERSON", "QUESTION"]};
   }
 }

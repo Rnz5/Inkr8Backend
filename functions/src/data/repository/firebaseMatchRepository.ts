@@ -22,7 +22,7 @@ export class FirebaseMatchRepository implements MatchRepository {
     } catch (error) {
       await this.db.runTransaction(async (tx) => {
         const ref = this.db.doc(`submissions/${id}`), game = await tx.get(ref);
-        if (game.get("matchStatus") === "PENDING") tx.update(ref, {matchError: "No se pudo actualizar el ranking de la partida"});
+        if (game.get("matchStatus") === "PENDING") tx.update(ref, {matchError: "The game ranking could not be updated"});
       });
       throw error;
     }

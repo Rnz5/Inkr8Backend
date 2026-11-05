@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.inkr8.domain.model.User
+import com.inkr8.presentation.state.AcceptanceMessages
 import com.inkr8.presentation.viewmodel.ProfileViewModel
 import java.text.DateFormat
 import java.util.Date
@@ -25,7 +26,9 @@ fun ProfileScreen(user: User, viewModel: ProfileViewModel, logout: () -> Unit) {
             Text("Perfil", style = MaterialTheme.typography.titleLarge)
             user.email?.let { Text(it) }
             Text("Liga ${user.league} · Rating ${user.rating}")
+            ErrorMessage(state.ratingError)
             Text("Merit disponible: ${user.merit}")
+            ErrorMessage(state.meritError)
             if (user.username == null) {
                 OutlinedTextField(value = name, onValueChange = { name = it.take(20) }, label = { Text("Username único") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                 Text("El username que elijas quedará asociado permanentemente a tu cuenta.")
@@ -33,12 +36,13 @@ fun ProfileScreen(user: User, viewModel: ProfileViewModel, logout: () -> Unit) {
             } else Text("Username: ${user.username}")
             ErrorMessage(state.error)
             if (state.saved) Text("Username guardado.")
-            OutlinedButton(onClick = logout) { Text("Cerrar sesión") }
+            OutlinedButton(onClick = logout) { Text("Log out") }
         } }
         item { SectionCard {
             Text("Rendimiento competitivo", style = MaterialTheme.typography.titleMedium)
             if (state.loading) LinearProgressIndicator(Modifier.fillMaxWidth())
-            ErrorMessage(state.progressError, viewModel::refresh)
+            ErrorMessage(state.statisticsError ?: state.progressError, viewModel::refresh)
+            ErrorMessage(state.updateError)
             state.progress?.statistics?.let { stats ->
                 Text("Partidas jugadas: ${stats.gamesPlayed}")
                 Text("Promedio de puntuación: ${String.format(Locale.getDefault(), "%.2f", stats.averageScore)}")
@@ -50,7 +54,7 @@ fun ProfileScreen(user: User, viewModel: ProfileViewModel, logout: () -> Unit) {
         } }
         item {
             Text("Historial de partidas", style = MaterialTheme.typography.titleMedium)
-            if (state.progressError != null) ErrorMessage("No se pudo cargar el historial de partidas.", viewModel::refresh)
+            ErrorMessage(state.historyError, viewModel::refresh)
             if (state.progress?.history?.isEmpty() == true) Text("Aún no tienes partidas competitivas evaluadas.")
         }
         items(state.progress?.history.orEmpty(), key = { it.id }) { game -> SectionCard {

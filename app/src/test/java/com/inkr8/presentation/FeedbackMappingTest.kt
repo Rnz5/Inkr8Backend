@@ -2,6 +2,7 @@ package com.inkr8.presentation
 
 import com.inkr8.data.dto.GameDto
 import com.inkr8.data.mapper.toDomain
+import com.inkr8.presentation.state.AcceptanceMessages
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -15,8 +16,8 @@ class FeedbackMappingTest {
         )).toDomain()
         val evaluation = requireNotNull(game.evaluation)
         assertEquals(78.0, evaluation.score, 0.0)
-        assertEquals("No se pudo cargar el feedback detallado en este momento", evaluation.feedbackError)
-        assertEquals("No se pudo cargar el detalle de restricciones", evaluation.constraintsError)
+        assertEquals(AcceptanceMessages.DETAILED_FEEDBACK_FAILED, evaluation.feedbackError)
+        assertEquals(AcceptanceMessages.RESTRICTION_DETAILS_FAILED, evaluation.constraintsError)
         assertNull(game.match!!.ratingChange)
     }
 }

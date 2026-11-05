@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModelStore
 import com.inkr8.domain.model.*
 import com.inkr8.domain.repository.*
 import com.inkr8.domain.usecase.*
+import com.inkr8.presentation.state.AcceptanceMessages
 import com.inkr8.presentation.viewmodel.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -37,7 +38,7 @@ class ContentViewModelTest {
         val vm = HomeViewModel(GetHome(home), GetWordExample(home)).also { store.put("home", it) }
         runCurrent(); assertEquals(0, calls); assertNull(vm.state.value.example)
         vm.showExample(); runCurrent()
-        assertEquals("No se pudo cargar el ejemplo. Por favor, intenta de nuevo", vm.state.value.exampleError)
+        assertEquals(AcceptanceMessages.EXAMPLE_LOAD_FAILED, vm.state.value.exampleError)
         failing = false; vm.showExample(); runCurrent()
         assertEquals("A bottle of ink", vm.state.value.example); assertNull(vm.state.value.exampleError)
     }
@@ -62,11 +63,11 @@ class ContentViewModelTest {
         val vm = ProfileViewModel(UpdateName(users), GetProgress(progress), GetSeasonHistory(seasons)).also { store.put("profile", it) }
         vm.refresh(); runCurrent()
         assertEquals(3L, vm.state.value.progress?.statistics?.gamesPlayed)
-        assertEquals("No se pudo cargar el historial de temporadas", vm.state.value.seasonsError)
+        assertEquals(AcceptanceMessages.SEASON_HISTORY_FAILED, vm.state.value.seasonsError)
         vm.save("writer"); runCurrent()
         assertEquals(3L, vm.state.value.progress?.statistics?.gamesPlayed)
         failing = true; vm.refresh(); runCurrent()
-        assertEquals("No se pudo recuperar la información de rendimiento.", vm.state.value.progressError)
+        assertEquals(AcceptanceMessages.PERFORMANCE_DATA_FAILED, vm.state.value.progressError)
     }
 
     @Test fun persistedSessionRestoresAndLogoutFailureCanBeRetried() = runTest(dispatcher) {
@@ -89,7 +90,7 @@ class ContentViewModelTest {
         val vm = SessionViewModel(ObserveSession(auth), InitializeUser(users), ObserveUser(users), SignIn(auth), SignOut(auth)).also { store.put("session", it) }
         runCurrent(); assertEquals(user, vm.state.value.user)
         vm.logout(); runCurrent()
-        assertEquals("Fallo al cerrar sesión. Inténtelo nuevamente", vm.state.value.error)
+        assertEquals(AcceptanceMessages.LOGOUT_FAILED, vm.state.value.error)
         assertEquals(user, vm.state.value.user)
         failLogout = false; vm.logout(); runCurrent()
         assertFalse(vm.state.value.signedIn); assertNull(vm.state.value.user)

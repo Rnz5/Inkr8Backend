@@ -6,11 +6,13 @@ import com.inkr8.domain.model.*
 import com.inkr8.domain.policy.GamePolicy
 import com.inkr8.domain.repository.Draft
 import com.inkr8.domain.usecase.*
+import com.inkr8.presentation.state.AcceptanceMessages
 import com.inkr8.presentation.state.GameUiState
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.io.IOException
 import java.util.UUID
 
 class GameViewModel(
@@ -62,12 +64,18 @@ class GameViewModel(
                 watch(id)
             } catch (error: CancellationException) { throw error }
             catch (error: Exception) {
+                val errMsg = error.message.orEmpty()
                 val message = when {
-                    error.message?.contains("Merit insuficiente") == true -> "No se puede iniciar la partida Ranked. Merit insuficiente"
-                    error.message?.contains("restricciones") == true -> "No se pudieron cargar las restricciones de la partida"
-                    mode == PlayMode.PRACTICE -> "No se pudo cargar la acción. Verifica tu conexión"
-                    state.value.writingMode == WritingMode.ON_TOPIC -> "No se pudo iniciar la partida On-Topic. Inténtalo nuevamente"
-                    else -> "No se puede ejecutar acción. Verifica tu conexión a internet"
+                    errMsg.contains("Merit insuficiente", ignoreCase = true) || errMsg.contains("Insufficient Merit", ignoreCase = true) ->
+                        AcceptanceMessages.RANKED_START_INSUFFICIENT_MERIT
+                    errMsg.contains("restricciones", ignoreCase = true) || errMsg.contains("restrictions", ignoreCase = true) ->
+                        AcceptanceMessages.GAME_RESTRICTIONS_FAILED
+                    mode == PlayMode.PRACTICE ->
+                        AcceptanceMessages.PRACTICE_LOAD_FAILED
+                    state.value.writingMode == WritingMode.ON_TOPIC ->
+                        AcceptanceMessages.ON_TOPIC_START_FAILED
+                    else ->
+                        AcceptanceMessages.INTERNET_ACTION_FAILED
                 }
                 updateState { it.copy(busy = false, error = message) }
             }
@@ -76,12 +84,25 @@ class GameViewModel(
     fun send() {
         val game = state.value.game ?: return
         if (state.value.busy) return
-        if (!state.value.canSubmit) { updateState { it.copy(error = "Tu texto no cumple con los requerimientos") }; return }
+        if (!state.value.canSubmit) {
+            updateState { it.copy(error = AcceptanceMessages.TEXT_REQUIREMENTS_NOT_MET) }
+            return
+        }
         updateState { it.copy(busy = true, error = null) }
         viewModelScope.launch {
-            try { submit(game, state.value.text); updateState { it.copy(busy = false) }; refreshRecent() }
+            try {
+                submit(game, state.value.text)
+                updateState { it.copy(busy = false) }
+                refreshRecent()
+            }
             catch (error: CancellationException) { throw error }
-            catch (error: Exception) { fail(error) }
+            catch (error: Exception) {
+                if (error is IOException) {
+                    updateState { it.copy(busy = false, error = AcceptanceMessages.SERVER_CONNECTION_FAILED) }
+                } else {
+                    fail(error)
+                }
+            }
         }
     }
     fun retryEvaluation() {
@@ -126,7 +147,7 @@ class GameViewModel(
             updateState { it.copy(recent = recent, loadingRecent = false) }
         }
         catch (error: CancellationException) { throw error }
-        catch (error: Exception) { updateState { it.copy(loadingRecent = false, recentError = "No se pudo cargar el historial de partidas.") } }
+        catch (error: Exception) { updateState { it.copy(loadingRecent = false, recentError = AcceptanceMessages.GAME_HISTORY_FAILED) } }
     } }
-    private fun fail(error: Exception) { updateState { it.copy(busy = false, error = error.message ?: "No se pudo completar la operación.") } }
+    private fun fail(error: Exception) { updateState { it.copy(busy = false, error = error.message ?: AcceptanceMessages.SERVER_CONNECTION_FAILED) } }
 }

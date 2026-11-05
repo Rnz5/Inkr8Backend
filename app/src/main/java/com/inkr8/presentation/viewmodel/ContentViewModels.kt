@@ -19,7 +19,7 @@ class HomeViewModel(private val getHome: GetHome, private val getExample: GetWor
         mutableState.value = HomeUiState()
         try { mutableState.value = HomeUiState(home = getHome(), loading = false) }
         catch (error: CancellationException) { throw error }
-        catch (error: Exception) { mutableState.update { it.copy(loading = false, error = "No se pudo cargar la palabra del momento. Revisa tu conexión") } }
+        catch (error: Exception) { mutableState.update { it.copy(loading = false, error = AcceptanceMessages.WORD_OF_MOMENT_FAILED) } }
     } }
     fun showExample() {
         val day = state.value.home?.wordDay ?: return
@@ -28,10 +28,11 @@ class HomeViewModel(private val getHome: GetHome, private val getExample: GetWor
             mutableState.update { it.copy(exampleLoading = true, exampleError = null) }
             try { val sentence = getExample(day); mutableState.update { it.copy(example = sentence, exampleLoading = false) } }
             catch (error: CancellationException) { throw error }
-            catch (error: Exception) { mutableState.update { it.copy(exampleLoading = false, exampleError = "No se pudo cargar el ejemplo. Por favor, intenta de nuevo") } }
+            catch (error: Exception) { mutableState.update { it.copy(exampleLoading = false, exampleError = AcceptanceMessages.EXAMPLE_LOAD_FAILED) } }
         }
     }
 }
+
 class RankingViewModel(private val getRanking: GetSeasonRanking) : ViewModel() {
     private val mutableState = MutableStateFlow(RankingUiState())
     val state = mutableState.asStateFlow()
@@ -41,21 +42,34 @@ class RankingViewModel(private val getRanking: GetSeasonRanking) : ViewModel() {
         mutableState.update { it.copy(loading = true, error = null) }
         try { mutableState.value = RankingUiState(ranking = getRanking(), loading = false) }
         catch (error: CancellationException) { throw error }
-        catch (error: Exception) { mutableState.update { it.copy(loading = false, error = "No se pudo cargar el ranking de la temporada") } }
+        catch (error: Exception) { mutableState.update { it.copy(loading = false, error = AcceptanceMessages.SEASON_STANDINGS_FAILED) } }
     } }
 }
+
 class ProfileViewModel(private val updateName: UpdateName, private val getProgress: GetProgress, private val getSeasons: GetSeasonHistory) : ViewModel() {
     private val mutableState = MutableStateFlow(ProfileUiState())
     val state = mutableState.asStateFlow()
     private var refreshJob: Job? = null
     private var seasonsJob: Job? = null
-    fun refresh() {
+    fun refresh(isPostMatchUpdate: Boolean = false) {
         refreshJob?.cancel()
         refreshJob = viewModelScope.launch {
-            mutableState.update { it.copy(loading = true, progressError = null) }
-            try { val progress = getProgress(); mutableState.update { it.copy(progress = progress, loading = false) } }
-            catch (error: CancellationException) { throw error }
-            catch (error: Exception) { mutableState.update { it.copy(loading = false, progressError = "No se pudo recuperar la información de rendimiento.") } }
+            mutableState.update { it.copy(loading = true, progressError = null, updateError = null, historyError = null, statisticsError = null) }
+            try {
+                val progress = getProgress()
+                mutableState.update { it.copy(progress = progress, loading = false) }
+            } catch (error: CancellationException) { throw error }
+            catch (error: Exception) {
+                mutableState.update {
+                    it.copy(
+                        loading = false,
+                        progressError = AcceptanceMessages.PERFORMANCE_DATA_FAILED,
+                        statisticsError = AcceptanceMessages.PERFORMANCE_DATA_FAILED,
+                        historyError = AcceptanceMessages.GAME_HISTORY_FAILED,
+                        updateError = if (isPostMatchUpdate) AcceptanceMessages.STATS_UPDATE_FAILED else null
+                    )
+                }
+            }
         }
         loadSeasons()
     }
@@ -65,7 +79,7 @@ class ProfileViewModel(private val updateName: UpdateName, private val getProgre
             mutableState.update { it.copy(seasonsLoading = true, seasonsError = null) }
             try { val seasons = getSeasons(); mutableState.update { it.copy(seasons = seasons, seasonsLoading = false) } }
             catch (error: CancellationException) { throw error }
-            catch (error: Exception) { mutableState.update { it.copy(seasonsLoading = false, seasonsError = "No se pudo cargar el historial de temporadas") } }
+            catch (error: Exception) { mutableState.update { it.copy(seasonsLoading = false, seasonsError = AcceptanceMessages.SEASON_HISTORY_FAILED) } }
         }
     }
     fun save(name: String) {
@@ -74,7 +88,13 @@ class ProfileViewModel(private val updateName: UpdateName, private val getProgre
         viewModelScope.launch {
             try { updateName(name); mutableState.update { it.copy(saving = false, saved = true) } }
             catch (error: CancellationException) { throw error }
-            catch (error: Exception) { mutableState.update { it.copy(saving = false, error = error.message ?: "No se pudo actualizar el username.") } }
+            catch (error: Exception) {
+                val msg = error.message ?: AcceptanceMessages.usernameAlreadyInUse(name)
+                val canonicalMsg = if (msg.contains("ya está en uso") || msg.contains("already in use")) {
+                    AcceptanceMessages.usernameAlreadyInUse(name.trim())
+                } else msg
+                mutableState.update { it.copy(saving = false, error = canonicalMsg) }
+            }
         }
     }
 }

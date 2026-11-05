@@ -227,7 +227,7 @@ test('concurrent username claims are unique, permanent and retained on reinitial
   await users.initialize('bob','Bob',null,seasonAt(now));
   const claims = await Promise.allSettled([users.updateName('alice','WriterName'),users.updateName('bob','writername')]);
   assert.equal(claims.filter(result=>result.status==='fulfilled').length,1);
-  assert.match(claims.find(result=>result.status==='rejected').reason.message,/El username .* ya está en uso/);
+  assert.match(claims.find(result=>result.status==='rejected').reason.message,/(Username .* is already in use|El username .* ya está en uso)/);
   const winner = claims[0].status==='fulfilled' ? 'alice' : 'bob';
   const username = (await db.doc(`users/${winner}`).get()).get('username');
   await users.updateName(winner,username);
@@ -241,7 +241,7 @@ test('timeout recovery is durable, concurrent and does not repeat the entry char
   await start(); await games.submit(idA,'alice',content);
   await games.defer(idA);
   const deferred = await db.doc(`submissions/${idA}`).get();
-  assert.match(deferred.get('error'),/tomando más de lo esperado/);
+  assert.match(deferred.get('error'),/(taking longer than expected|tomando más de lo esperado)/);
   assert.equal(deferred.get('nextRetryAt'),now+5*60000);
   await games.recoverEvaluations();
   assert.equal((await games.get(idA)).status,'FAILED');
@@ -289,7 +289,7 @@ test('match failures are visible and a successful recovery clears the error', as
   const pair = repository.matchmaker.pairCandidates.bind(repository.matchmaker);
   repository.matchmaker.pairCandidates = async()=>{throw Error('Unavailable');};
   await assert.rejects(()=>repository.match(idA,seasonAt(now)),/Unavailable/);
-  assert.equal((await db.doc(`submissions/${idA}`).get()).get('matchError'),'No se pudo actualizar el ranking de la partida');
+  assert.match((await db.doc(`submissions/${idA}`).get()).get('matchError'),/(The game ranking could not be updated|No se pudo actualizar el ranking de la partida)/);
   repository.matchmaker.pairCandidates = pair;
   await repository.match(idA,seasonAt(now));
   const result = await db.doc(`submissions/${idA}`).get();

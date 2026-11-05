@@ -117,10 +117,10 @@ test('constraints validate whole Unicode words, advanced rules and preserve a va
     challenge:{words:[{text:'árbol'},{text:'ausente'}],topic:'Naturaleza',advanced:['FIRST_PERSON','QUESTION']}};
   const result = structureEvaluation(game,{score:74,feedback:'Base',topicRelevant:true});
   assert.equal(result.score,74);
-  assert.ok(result.feedbackError.includes('feedback detallado'));
+  assert.ok(result.feedbackError.includes('detailed feedback') || result.feedbackError.includes('feedback detallado'));
   assert.deepEqual(result.constraints.map(rule=>rule.fulfilled),[true,true,false,true,true,true]);
   const incomplete = structureEvaluation(game,{score:74,feedback:'Base'});
-  assert.equal(incomplete.constraintsError,'No se pudo validar el cumplimiento de restricciones');
+  assert.ok(incomplete.constraintsError === 'Compliance with restrictions could not be verified' || incomplete.constraintsError === 'No se pudo validar el cumplimiento de restricciones');
 });
 
 test('evaluation timeouts persist a deferred retry without awarding a reward', async () => {

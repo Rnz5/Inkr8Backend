@@ -38,7 +38,7 @@ export class FirebaseUserRepository implements UserRepository {
       const ref = this.db.doc(`users/${id}`), claimRef = this.db.doc(`usernames/${key}`);
       const [snapshot, claim] = await tx.getAll(ref, claimRef);
       if (!snapshot.exists || snapshot.get("accountClosed") === true) throw new DomainError("permission-denied", "Perfil no disponible.");
-      if (claim.exists && claim.get("userId") !== id) throw new DomainError("failed-precondition", `El username ${name} ya está en uso`);
+      if (claim.exists && claim.get("userId") !== id) throw new DomainError("failed-precondition", `Username ${name} is already in use`);
       const previous = snapshot.get("username");
       if (previous && previous !== name) throw new DomainError("failed-precondition", "Tu username está asociado permanentemente a tu cuenta.");
       const user = {...mapUser(id, snapshot.data()!), name, username: name};

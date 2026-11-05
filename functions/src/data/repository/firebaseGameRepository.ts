@@ -22,7 +22,7 @@ export class FirebaseGameRepository implements GameRepository {
       }
       const user = mapUser(userId, snapshot.data()!);
       const cost = mode === "RANKED" ? RANKED_COST : 0;
-      if (user.merit < cost) throw new DomainError("failed-precondition", "No se puede iniciar la partida Ranked. Merit insuficiente");
+      if (user.merit < cost) throw new DomainError("failed-precondition", "The ranked match cannot be started. Insufficient Merit");
       const normalized = writeCurrentUser(this.db, tx, user, season);
       const game: Game = {id, authorId: userId, mode, writingMode, challenge, status: "DRAFT", content: "", seasonIndex: season.index, timestamp: now};
       tx.create(ref, {...game, seasonId: season.id, entryCost: cost, schemaVersion: 2});

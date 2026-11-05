@@ -3,6 +3,7 @@ package com.inkr8.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.inkr8.domain.usecase.*
+import com.inkr8.presentation.state.AcceptanceMessages
 import com.inkr8.presentation.state.SessionUiState
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -31,7 +32,7 @@ class SessionViewModel(private val observeSession: ObserveSession, private val i
                 mutableState.update { it.copy(user = user, loading = false) }
                 observeUser(user.id).collect { updated -> mutableState.update { it.copy(user = updated, loading = false, error = null) } }
             } catch (error: CancellationException) { throw error }
-            catch (error: Exception) { mutableState.update { it.copy(loading = false, error = "No se pudo recuperar tu información de progreso. Inténtalo nuevamente") } }
+            catch (error: Exception) { mutableState.update { it.copy(loading = false, error = AcceptanceMessages.PROGRESS_RETRIEVE_FAILED) } }
         }
     }
     fun beginLogin() { mutableState.update { it.copy(loading = true, error = null) } }
@@ -40,7 +41,7 @@ class SessionViewModel(private val observeSession: ObserveSession, private val i
             mutableState.update { it.copy(loading = true, error = null) }
             try { signIn(token) }
             catch (error: CancellationException) { throw error }
-            catch (error: Exception) { authError(error.message ?: "No se pudo iniciar sesión.") }
+            catch (error: Exception) { authError(AcceptanceMessages.GOOGLE_SIGNIN_FAILED) }
         }
     }
     fun authError(message: String) { mutableState.update { it.copy(loading = false, error = message) } }
@@ -48,7 +49,7 @@ class SessionViewModel(private val observeSession: ObserveSession, private val i
         viewModelScope.launch {
             try { signOut() }
             catch (error: CancellationException) { throw error }
-            catch (error: Exception) { authError("Fallo al cerrar sesión. Inténtelo nuevamente") }
+            catch (error: Exception) { authError(AcceptanceMessages.LOGOUT_FAILED) }
         }
     }
 }

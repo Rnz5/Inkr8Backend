@@ -2,6 +2,7 @@ package com.inkr8.data.mapper
 
 import com.inkr8.data.dto.*
 import com.inkr8.domain.model.*
+import com.inkr8.domain.policy.AcceptanceMessages
 
 internal fun UserDto.toDomain() = User(id, name, email, merit, rating, league, username)
 internal fun WireMap.toWord() = Word(string("text"), string("definition"), string("sentence"), string("phonetic"), string("partOfSpeech"), string("rarity"))
@@ -25,8 +26,8 @@ internal fun GameDto.toDomain(): Game {
         val constraints = constraintMaps.orEmpty().map { rule -> ConstraintResult(rule.string("label"), rule["fulfilled"] as Boolean) }
         Evaluation((it["score"] as Number).toDouble(), it.string("feedback"), it.number("meritEarned"),
             it.string("spelling"), it.string("vocabulary"), it.string("coherence"), it.string("creativity"), constraints,
-            it["feedbackError"] as? String ?: if (listOf("spelling", "vocabulary", "coherence").any { key -> it.string(key).isBlank() }) "No se pudo cargar el feedback detallado en este momento" else null,
-            it["constraintsError"] as? String ?: if (constraintMaps == null || constraintMaps.size != (it["constraints"] as? List<*>)?.size) "No se pudo cargar el detalle de restricciones" else null)
+            it["feedbackError"] as? String ?: if (listOf("spelling", "vocabulary", "coherence").any { key -> it.string(key).isBlank() }) AcceptanceMessages.DETAILED_FEEDBACK_FAILED else null,
+            it["constraintsError"] as? String ?: if (constraintMaps == null || constraintMaps.size != (it["constraints"] as? List<*>)?.size) AcceptanceMessages.RESTRICTION_DETAILS_FAILED else null)
     }
     val match = (fields["match"] as? Map<*, *>)?.wire()?.takeIf { it["opponentScore"] is Number && it["outcome"] in listOf("WIN", "LOSS", "DRAW") }?.let {
         MatchResult(it.string("opponentName"), (it["opponentScore"] as Number).toDouble(), it.string("outcome"), (it["ratingChange"] as? Number)?.toLong())

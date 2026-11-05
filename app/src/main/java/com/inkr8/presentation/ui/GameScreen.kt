@@ -13,6 +13,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.inkr8.domain.model.*
 import com.inkr8.R
 import com.inkr8.domain.policy.GamePolicy
+import com.inkr8.presentation.state.AcceptanceMessages
 import com.inkr8.presentation.viewmodel.*
 
 @Composable
@@ -21,7 +22,6 @@ fun GameScreen(viewModel: GameViewModel, mode: PlayMode, ranking: RankingViewMod
     LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item {
             ErrorMessage(state.error, { if (state.game == null) viewModel.start() else viewModel.reconnect() })
-            if (state.error == "No se puede iniciar la partida Ranked. Merit insuficiente") ErrorMessage("No tienes Merit suficiente para ingresar.")
             if (state.busy || state.loadingRecent) LinearProgressIndicator(Modifier.fillMaxWidth())
             val game = state.game
             if (game == null) SectionCard {
@@ -46,8 +46,8 @@ fun GameScreen(viewModel: GameViewModel, mode: PlayMode, ranking: RankingViewMod
                         OutlinedTextField(value = state.text, onValueChange = viewModel::edit,
                             modifier = Modifier.fillMaxWidth().heightIn(min = 220.dp), label = { Text("Tu texto") }, enabled = !state.busy)
                         Text("${state.wordCount} / ${game.writingMode.minWords}–${game.writingMode.maxWords} palabras")
-                        if (!state.canSubmit) Text("Tu texto no cumple con los requerimientos", color = MaterialTheme.colorScheme.error)
-                        Button(onClick = viewModel::send, enabled = !state.busy && state.canSubmit) { Text("Enviar Respuesta") }
+                        if (!state.canSubmit) Text(AcceptanceMessages.TEXT_REQUIREMENTS_NOT_MET, color = MaterialTheme.colorScheme.error)
+                        Button(onClick = viewModel::send, enabled = !state.busy && state.canSubmit) { Text(AcceptanceMessages.SUBMIT_BUTTON_LABEL) }
                     }
                     GameStatus.PENDING -> { CircularProgressIndicator(); Text("R8 está evaluando tu texto. Puedes regresar más tarde y consultar esta partida.") }
                     GameStatus.FAILED -> {
@@ -73,10 +73,15 @@ fun GameScreen(viewModel: GameViewModel, mode: PlayMode, ranking: RankingViewMod
                         game.match?.let { match ->
                             Text("${when (match.outcome) { "WIN" -> "Victoria"; "LOSS" -> "Derrota"; else -> "Empate" }} · ${match.opponentName} (${match.opponentScore})")
                             val delta = match.ratingChange
-                            if (delta == null) { ErrorMessage("No se pudo actualizar el ranking de la partida"); ErrorMessage("Fallo del servidor") }
-                            else Text("Rating ${if (delta >= 0) "+" else ""}$delta")
+                            if (delta == null) {
+                                ErrorMessage(AcceptanceMessages.SERVER_FAILURE)
+                            } else {
+                                Text("Rating ${if (delta >= 0) "+" else ""}$delta")
+                            }
                         }
-                        if (game.matchStatus == MatchStatus.MATCHED && game.match == null) ErrorMessage("No se pudo actualizar el resultado de la partida")
+                        if (game.matchStatus == MatchStatus.MATCHED && game.match == null) {
+                            ErrorMessage(AcceptanceMessages.GAME_RESULT_UPDATE_FAILED)
+                        }
                         if (game.matchStatus == MatchStatus.EXPIRED) Text("La temporada terminó antes del emparejamiento. La recompensa de Merit se conserva; esta partida no cambia el rating de la nueva temporada.")
                         else if (mode == PlayMode.RANKED && game.matchStatus == MatchStatus.PENDING) Text("Buscando rival. Después de 48 horas sin rival se usará tu puntuación promedio como referencia.")
                     }

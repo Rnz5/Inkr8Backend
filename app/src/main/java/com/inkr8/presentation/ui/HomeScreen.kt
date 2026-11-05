@@ -53,7 +53,7 @@ fun HomeScreen(viewModel: HomeViewModel, practice: () -> Unit, ranked: () -> Uni
                 Text(seasonDates(home.season))
                 Text("El rating de todos vuelve a 0 cada 14 días. Tu Merit se conserva.")
                 Button(onClick = practice) { Text("Practicar") }
-                OutlinedButton(onClick = ranked) { Text("Ranked · ${home.rankedCost} Merit por entrada") }
+                OutlinedButton(onClick = ranked) { Text("Play Ranked · ${home.rankedCost} Merit por entrada") }
             }
         }
     }
