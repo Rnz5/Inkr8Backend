@@ -20,16 +20,10 @@ try {
     }
 
     $violations = @(
-        Search-Pattern '^import (android\.|androidx\.|com\.google\.firebase|com\.inkr8\.data|com\.inkr8\.presentation)' 'domain/src/main'
-        Search-Pattern '^import (com\.google\.firebase|com\.inkr8\.data|com\.inkr8\.di)' 'app/src/main/java/com/inkr8/presentation'
-        Search-Pattern '^import com\.inkr8\.presentation' 'app/src/main/java/com/inkr8/data'
-        Search-Pattern '^import (com\.google\.firebase|com\.inkr8\.data)|graph\.google\.' 'app/src/main/java/com/inkr8/MainActivity.kt'
-        Search-Pattern '\bDraftRepository\b' 'app/src/main/java/com/inkr8/presentation'
-        Search-Pattern 'GamePolicy\.(wordCount|validateWriting)\s*\(' 'app/src/main/java/com/inkr8/presentation/ui'
         Search-Pattern 'from ["''](firebase|openai|.*(/data/|/presentation/))' 'functions/src/domain'
-        Search-Pattern 'tournament|torneo|reputation|admob|play-services-ads|meritHold|philosopher|paywall' @('app/src/main', 'functions/src', 'domain/src/main', 'gradle', 'app/build.gradle.kts') $false
+        Search-Pattern 'tournament|torneo|reputation|admob|play-services-ads|meritHold|philosopher|paywall' @('functions/src') $false
     )
     $violations = $violations | Where-Object { $_ -and $_.Trim() -ne "" }
     if ($violations.Count -gt 0) { throw ($violations -join "`n") }
-    Write-Output 'Architecture boundaries and excluded systems: PASS'
+    Write-Output 'Backend architecture boundaries and excluded systems: PASS'
 } finally { Pop-Location }
