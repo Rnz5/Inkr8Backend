@@ -7,11 +7,18 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "npm run build && node --test test/domain.test.cjs",
-    "test:integration": "npm run build && node --test integration/firestore.test.cjs",
+    "test": "npm run build && node --test test/domain.test.cjs test/capitulo10.test.cjs test/adapter.capitulo10.test.cjs",
+    "test:integration": "npm run build && node --test --test-concurrency=1 integration/firestore.test.cjs integration/capitulo10.firestore.test.cjs integration/revision.regression.test.cjs integration/cierre.cn-renzo.test.cjs integration/cierre.ac02.test.cjs integration/cierre.matchmaking.test.cjs",
+    "test:coverage": "npm run build && node --test --experimental-test-coverage test/domain.test.cjs test/capitulo10.test.cjs test/adapter.capitulo10.test.cjs",
+    "test:integration:coverage": "npm run build && node --test --test-concurrency=1 --experimental-test-coverage integration/firestore.test.cjs integration/capitulo10.firestore.test.cjs integration/revision.regression.test.cjs integration/cierre.cn-renzo.test.cjs integration/cierre.ac02.test.cjs integration/cierre.matchmaking.test.cjs",
     "lint": "tsc --noEmit",
     "serve": "npm run build && firebase emulators:start --only functions,firestore,auth",
-    "deploy": "npm run build && firebase deploy --only functions,firestore"
+    "deploy": "npm run build && firebase deploy --only functions,firestore",
+    "test:concurrency": "npm run build && node --test integration/capitulo10.concurrency.test.cjs",
+    "test:concurrency:coverage": "npm run build && node --test --experimental-test-coverage integration/capitulo10.concurrency.test.cjs",
+    "test:conformance:ac02": "npm run build && node --test --experimental-test-coverage integration/cierre.ac02.conformidad.cjs",
+    "test:matching:policy": "npm run build && node --test integration/cierre.matchmaking-policy.test.cjs",
+    "test:concurrency:odd": "npm run build && node --test --experimental-test-coverage integration/cierre.matchmaking.odd-load.test.cjs"
   },
   "dependencies": {
     "firebase-admin": "^13.7.0",
