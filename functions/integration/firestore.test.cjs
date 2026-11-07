@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 if (!process.env.FIRESTORE_EMULATOR_HOST) throw Error('Use a local Firestore emulator; never run these tests against production.');
+assert.match(process.env.FIRESTORE_EMULATOR_HOST, /^(127\.0\.0\.1|localhost):\d+$/, 'Only loopback emulator hosts are allowed');
 const {initializeApp, deleteApp} = require('firebase-admin/app');
 const {getFirestore} = require('firebase-admin/firestore');
 const {initializeTestEnvironment, assertFails, assertSucceeds} = require('@firebase/rules-unit-testing');
@@ -57,7 +58,7 @@ test('concurrent duplicate entry debits Ranked exactly once and enforces ownersh
 test('insufficient balance creates no game and invalid submission remains a draft', async () => {
   await users.initialize('alice','Alice',null,seasonAt(now));
   await db.doc('users/alice').update({merit:10});
-  await assert.rejects(() => games.start(idA,'alice','RANKED','STANDARD',challenge,seasonAt(now),now), /insuficiente/);
+  await assert.rejects(() => games.start(idA,'alice','RANKED','STANDARD',challenge,seasonAt(now),now), {code:'failed-precondition',message:'The ranked match cannot be started. Insufficient Merit'});
   assert.equal((await db.collection('submissions').get()).size,0);
   await games.start(idA,'alice','PRACTICE','STANDARD',challenge,seasonAt(now),now);
   await assert.rejects(() => games.submit(idA,'alice','corto'), /Escribe/);
@@ -105,17 +106,27 @@ test('simultaneous matchmaking settles both players once and never crosses a sea
 });
 test('R8 fallback waits exactly 48 hours and settles concurrent retries only once', async () => {
   await evaluated(idA,'alice',80);
+  const initialMerit = (await db.doc('users/alice').get()).get('merit');
   now += 48 * 60 * 60 * 1000 - 1;
   await matches.recover(seasonAt(now));
   assert.equal((await db.doc(`submissions/${idA}`).get()).get('matchStatus'),'PENDING');
   assert.equal((await db.doc('users/alice').get()).get('rating'),0);
   now += 1;
-  await Promise.all([matches.match(idA,seasonAt(now)), matches.recover(seasonAt(now)), matches.match(idA,seasonAt(now))]);
+  const requestTimes=[], origin=process.hrtime.bigint(),elapsed=()=>Number(process.hrtime.bigint()-origin)/1e6;
+  const settledRequests = await Promise.allSettled([()=>matches.match(idA,seasonAt(now)), ()=>matches.recover(seasonAt(now)), ()=>matches.match(idA,seasonAt(now))].map(async(operation,index)=>{
+    const row={index,start_ms:elapsed()};requestTimes.push(row);try{return await operation();}finally{row.end_ms=elapsed();}
+  }));
+  const requests = settledRequests.map((result,index) => ({...requestTimes.find(row=>row.index===index),status:result.status,...(result.status === 'rejected' ? {error:{code:result.reason.code,message:result.reason.message}} : {})}));
+  let active=0,peak=0;for(const [,d] of requestTimes.flatMap(row=>[[row.start_ms,1],[row.end_ms,-1]]).sort((a,b)=>a[0]-b[0]||a[1]-b[1])){active+=d;peak=Math.max(peak,active);}
+  if (process.env.CAP10_EVIDENCE_DIR) fs.writeFileSync(path.join(process.env.CAP10_EVIDENCE_DIR,'recuperacion_48h.json'),JSON.stringify({now,attempted:3,peak,requests},null,2));
+  assert.equal(peak,3);
+  assert.deepEqual(requests.filter(result => result.status === 'rejected'),[], 'All three concurrent recovery operations must complete without errors');
   const settled = await db.doc(`submissions/${idA}`).get();
   assert.equal(settled.get('matchStatus'),'MATCHED');
   assert.equal(settled.get('match').opponentScore,80);
   assert.equal(settled.get('match').outcome,'DRAW');
   assert.equal((await db.doc('users/alice').get()).get('rating'),1);
+  assert.equal((await db.doc('users/alice').get()).get('merit'),initialMerit);
   await matches.recover(seasonAt(now));
   assert.equal((await db.doc('users/alice').get()).get('rating'),1);
   await matches.match('missing-game',seasonAt(now));
