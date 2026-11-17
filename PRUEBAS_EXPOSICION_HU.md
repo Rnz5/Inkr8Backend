@@ -1,7 +1,7 @@
 # Pruebas de la exposición — HU 1.1 a 1.6
 
 Cada integrante tiene **sus tres pruebas** (caja blanca, caja negra y unitaria) sobre **su HU**, con su nombre en el archivo.
-Todas usan código real del proyecto: no se modificó ningún archivo de producto.
+Todas usan código real del proyecto; no se modificó ningún archivo de producto. Se ejecutan desde la terminal de **Visual Studio Code**.
 
 | HU | Integrante | Caja blanca (V(G) > 4) | Caja negra (> 4 entradas) | Unitaria (≥ 4 casos) |
 |---|---|---|---|---|
@@ -16,77 +16,75 @@ Total: 117 casos (89 en el backend, 28 en Android).
 
 ## Dónde están
 
-| Repositorio y rama | Archivo |
+| Repositorio y rama | Archivos |
 |---|---|
 | Backend `Rnz5/Inkr8Backend`, rama `pruebas/capitulo-10` | `functions/test/hu/hu1_1_matias.test.cjs` … `hu1_6_pedro.test.cjs` y `functions/test/hu/apoyo/firestoreFalso.cjs` |
 | Android `Matonga-Matonag/Inkr8Android`, rama `pruebas/capitulo-10` | `app/src/test/java/com/inkr8/hu/Hu13MarcoTest.kt`, `Hu14VictorTest.kt`, `Hu15JeanCarloTest.kt`, `Hu16PedroTest.kt` |
 
 La rama `pruebas/capitulo-10` del backend tiene el mismo código de producto que la rama `Inkr8BackEnd`; la de Android, el mismo que `main`.
 
-## Preparación (una sola vez, antes de la exposición)
+## Preparación (una vez, con internet)
 
-### Backend (todos)
-Requisitos: Git y **Node.js 20** (`node -v` debe mostrar v20.x).
+1. Instalar **Visual Studio Code**, **Git** y **Node.js LTS** (funciona con Node 20 y con versiones más nuevas; el aviso `EBADENGINE` se ignora).
+   Quienes tienen pruebas Android (Marco, Víctor, Jean Carlo y Pedro) deben tener **Android Studio** instalado, solo por su Java y su SDK.
+2. En VS Code: `Ctrl + Shift + P` → **Terminal: Select Default Profile** → **Command Prompt**. En Windows, la terminal PowerShell suele bloquear `npm`.
+3. En la terminal (*Terminal → New Terminal*):
 
-```bash
-git clone https://github.com/Rnz5/Inkr8Backend.git
-cd Inkr8Backend
-git checkout pruebas/capitulo-10
-cd functions
+```bat
+mkdir C:\Inkr8
+cd /d C:\Inkr8
+git clone -b pruebas/capitulo-10 https://github.com/Rnz5/Inkr8Backend.git
+git clone -b pruebas/capitulo-10 https://github.com/Matonga-Matonag/Inkr8Android.git
+cd /d C:\Inkr8\Inkr8Backend\functions
 npm ci
 npm run test:hu
 ```
 
-Debe terminar con `# pass 89` y `# fail 0`. Las pruebas usan un Firestore falso en memoria: no necesitan Java, emulador, internet ni credenciales de Firebase.
+Debe terminar con `ℹ pass 89` y `ℹ fail 0`. Las pruebas del backend usan un Firestore falso en memoria: no necesitan emulador, Java ni credenciales de Firebase.
 
-### Android (Marco, Víctor, Jean Carlo y Pedro)
-Requisitos: Android Studio (trae el JDK 21). No hace falta `google-services.json` ni un celular o emulador: son pruebas JVM.
+## Ejecución en vivo
 
-1. Clonar `https://github.com/Matonga-Matonag/Inkr8Android.git` y cambiar a la rama `pruebas/capitulo-10` (en Android Studio: *Git → Branches → origin/pruebas/capitulo-10 → Checkout*).
-2. Esperar a que termine el *Gradle sync* (la primera vez descarga dependencias: hacerlo con internet, antes de la exposición).
-3. Ejecutar una vez tu prueba (ver abajo) para que quede compilada.
-
-## Ejecución en vivo (lo que hace cada uno)
-
-Desde `Inkr8Backend/functions`:
-
-| Integrante | Comando del backend | Qué se ve |
-|---|---|---|
-| Matías | `npm run test:hu:matias` | 17 casos: CB league, CN registro, UT InitializeUser |
-| Renzo | `npm run test:hu:renzo` | 23 casos: CB updateName, CN username único, UT UpdateUserName |
-| Marco | `npm run test:hu:marco` | 7 casos: CB mapUser |
-| Víctor | `npm run test:hu:victor` | 15 casos: CB authenticated, CN acceso con/sin sesión |
-| Jean Carlo | `npm run test:hu:jeancarlo` | 13 casos: CB dailyWord, UT GetDailyHome |
-| Pedro | `npm run test:hu:pedro` | 14 casos: CN frase del día, UT GetWordExample |
-
-Desde la raíz de `Inkr8Android` (terminal de Android Studio):
+### Backend (desde `C:\Inkr8\Inkr8Backend\functions`)
 
 | Integrante | Comando | Casos |
 |---|---|---|
-| Marco | `.\gradlew.bat :app:testDebugUnitTest --tests "com.inkr8.hu.Hu13MarcoTest"` | CN UserDto (6) + UT SessionViewModel (5) |
-| Víctor | `.\gradlew.bat :app:testDebugUnitTest --tests "com.inkr8.hu.Hu14VictorTest"` | UT logout (5) |
-| Jean Carlo | `.\gradlew.bat :app:testDebugUnitTest --tests "com.inkr8.hu.Hu15JeanCarloTest"` | CN toHome (7) |
-| Pedro | `.\gradlew.bat :app:testDebugUnitTest --tests "com.inkr8.hu.Hu16PedroTest"` | CB showExample (5) |
+| Matías | `npm run test:hu:matias` | 17: CB league, CN registro, UT InitializeUser |
+| Renzo | `npm run test:hu:renzo` | 23: CB updateName, CN username único, UT UpdateUserName |
+| Marco | `npm run test:hu:marco` | 7: CB mapUser |
+| Víctor | `npm run test:hu:victor` | 15: CB authenticated, CN acceso con y sin sesión |
+| Jean Carlo | `npm run test:hu:jeancarlo` | 13: CB dailyWord, UT GetDailyHome |
+| Pedro | `npm run test:hu:pedro` | 14: CN frase del día, UT GetWordExample |
 
-Alternativa en Android Studio: abrir el archivo `HuXX…Test.kt` y pulsar el triángulo verde junto a `class` → *Run*. El panel inferior muestra cada caso en verde. Informe HTML: `app/build/reports/tests/testDebugUnitTest/index.html`.
+### Android (desde `C:\Inkr8\Inkr8Android`)
 
-En Mac/Linux, usar `./gradlew` en lugar de `.\gradlew.bat`.
+Una vez por cada terminal nueva (rutas de una instalación normal de Android Studio):
 
-## Cómo explicar cada prueba (guion de 1 minuto)
+```bat
+set "JAVA_HOME=C:\Program Files\Android\Android Studio\jbr"
+set "ANDROID_HOME=%LOCALAPPDATA%\Android\Sdk"
+```
 
-1. **Caja blanca**: abrir el método en el código, señalar cada decisión (`if`, `&&`, `||`, `??`, `?.`, ternario, `catch`), decir V(G) = decisiones + 1, mostrar el grafo de la diapositiva y decir qué caso recorre cada camino (el nombre de cada prueba dice el camino: `camino 3: d3 V, d4 V`).
-2. **Caja negra**: nombrar las entradas, las clases válidas (V) y no válidas (NV) que están en el comentario del archivo, y mostrar que cada caso indica las clases que cubre (`HU12-CN-C06 NV6`). Los esperados salen del criterio de aceptación, no del código.
-3. **Unitaria**: explicar qué unidad se aísla y con qué doble de prueba (repositorio espía o falso, reloj fijo), y qué verifica cada caso (llamadas, resultado, error propagado).
-4. **Ejecutar** el comando y mostrar el resumen `pass`/`fail` (o los checks verdes de Android Studio).
+| Integrante | Comando | Casos |
+|---|---|---|
+| Marco | `.\gradlew.bat :app:testDebugUnitTest --tests "com.inkr8.hu.Hu13MarcoTest" --rerun` | CN UserDto (6) + UT SessionViewModel (5) |
+| Víctor | `.\gradlew.bat :app:testDebugUnitTest --tests "com.inkr8.hu.Hu14VictorTest" --rerun` | UT logout (5) |
+| Jean Carlo | `.\gradlew.bat :app:testDebugUnitTest --tests "com.inkr8.hu.Hu15JeanCarloTest" --rerun` | CN toHome (7) |
+| Pedro | `.\gradlew.bat :app:testDebugUnitTest --tests "com.inkr8.hu.Hu16PedroTest" --rerun` | CB showExample (5) |
 
-Para demostrar que la prueba sí detecta errores (si el profesor lo pide): cambiar en `src` un `<` por `<=` o un mensaje, volver a ejecutar, mostrar el caso en rojo y deshacer el cambio con `git checkout -- src`.
+Debe salir `BUILD SUCCESSFUL`. Para ver cada caso: `start app\build\reports\tests\testDebugUnitTest\index.html`.
+`--rerun` obliga a ejecutar la prueba aunque ya se haya corrido antes; sin él, Gradle responde `UP-TO-DATE` y no la ejecuta. La primera ejecución descarga dependencias y tarda de 3 a 5 minutos.
 
-## Si algo falla en vivo
+## Demostrar que la prueba detecta errores
+
+Cambiar algo en el código (por ejemplo, en `functions/src/domain/policy/gamePolicy.ts`, `rating < 30` por `rating <= 30`), volver a correr el comando, mostrar el caso en rojo (`✖ HU11-CB-C02`) y deshacer el cambio con `git checkout -- src` (en Android, `git checkout -- app/src/main`).
+
+## Si algo falla
 
 | Síntoma | Solución |
 |---|---|
-| `npm` no reconocido / versión distinta de 20 | Instalar Node 20 LTS y abrir una terminal nueva. |
+| `npm.ps1 no se puede cargar… ejecución de scripts deshabilitada` | Cambiar la terminal de VS Code a Command Prompt. |
+| `'git' / 'node' / 'npm' no se reconoce` | Instalar el programa y reiniciar VS Code. |
 | `Cannot find module '../../lib/...'` | Ejecutar con `npm run …` (compila antes) y no con `node --test` directo. |
-| Gradle: `SDK location not found` | Abrir el proyecto una vez en Android Studio (crea `local.properties`). |
-| Gradle descarga y tarda | Haber corrido la prueba antes con internet; en vivo agregar `--offline`. |
-| Pruebas de Android no aparecen | Verificar que la rama activa es `pruebas/capitulo-10`. |
+| `'gradlew.bat' no se reconoce` | Escribir `.\gradlew.bat` desde la carpeta `Inkr8Android`. |
+| `JAVA_HOME is set to an invalid directory` / `SDK location not found` | Revisar las dos líneas `set` (Android Studio → Settings → Gradle JDK y Android SDK muestran las rutas). |
+| Gradle responde `UP-TO-DATE` | Agregar `--rerun`. |
